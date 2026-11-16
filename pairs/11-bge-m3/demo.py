@@ -30,10 +30,10 @@ queries_fr = json.load(open(HERE / "queries_fr.json", encoding="utf-8"))
 by_text = {t.strip(): q for q, t in queries.items()} | {t.strip(): q for q, t in queries_fr.items()}
 
 PRESETS = [
-    {"key": "1", "label": "Hero", "qid": "1221", "lang": "en", "note": "typo: “matasteses”"},
-    {"key": "2", "label": "Hero, in French", "qid": "1221", "lang": "fr", "note": "same claim, English corpus"},
-    {"key": "3", "label": "Failure", "qid": "659", "lang": "en", "note": "the drug name is not in the abstract"},
-    {"key": "4", "label": "Wildcard backup", "text": "Le café réduit le risque de diabète de type 2.", "note": "no label: judge by eye"},
+    {"key": "1", "label": "A typo", "qid": "1221", "lang": "en"},
+    {"key": "2", "label": "The same claim in French", "qid": "1221", "lang": "fr"},
+    {"key": "3", "label": "A drug the abstract never names", "qid": "659", "lang": "en"},
+    {"key": "4", "label": "Coffee and diabetes, in French", "text": "Le café réduit le risque de diabète de type 2."},
 ]
 
 
@@ -107,74 +107,81 @@ class Demo:
         return np.array([(qt @ torch.from_numpy(np.asarray(self.C[self.off[j]:self.off[j + 1]], dtype=np.float32)).T)
                          .max(dim=1).values.mean().item() for j in cand])
 
-    def m3_search(self, text, mode="all"):
-        """The five modes of method.py, on the precomputed vectors (exact search, so the same as Faiss flat)."""
+    def m3_search(self, text):
+        """The five modes of method.py at once, on the precomputed vectors (exact search, so the same as Faiss flat)."""
         q = self.enc.encode([text], max_length=MAX_LEN, return_dense=True, return_sparse=True, return_colbert_vecs=True)
         qd, ql, qc = q["dense_vecs"][0], q["lexical_weights"][0], q["colbert_vecs"][0]
         s_dense = self.D @ qd
         s_lex = np.array([sum(float(w) * L.get(t, 0.0) for t, w in ql.items()) for L in self.L])
         o_dense, o_lex = np.argsort(-s_dense), np.argsort(-s_lex)
         pool = o_dense[:N_CAND]
-        s_mul_pool = self.mul(qc, pool)                                       # always computed, for the per-head ranks
-        if mode == "dense":
-            order = o_dense
-        elif mode == "sparse":
-            order = o_lex
-        elif mode == "multi-vec":
-            order = pool[np.argsort(-s_mul_pool)]
-        elif mode == "dense+sparse":
-            cand = np.union1d(o_dense[:N_HYBRID], o_lex[:N_HYBRID])
-            order = cand[np.argsort(-(W_DENSE * s_dense[cand] + W_LEX * s_lex[cand]))]
-        else:
-            order = pool[np.argsort(-(W_DENSE * s_dense[pool] + W_LEX * s_lex[pool] + W_MUL * s_mul_pool))]
-        heads = {"dense": o_dense, "sparse": o_lex, "multi-vec": pool[np.argsort(-s_mul_pool)]}
-        tok = self.enc.tokenizer.convert_ids_to_tokens
-        lex = sorted(((tok(int(t)), round(float(w), 3)) for t, w in ql.items()), key=lambda x: -x[1])
-        return order, heads, lex
+        s_mul = self.mul(qc, pool)
+        hybrid = np.union1d(o_dense[:N_HYBRID], o_lex[:N_HYBRID])
+        orders = {
+            "all": pool[np.argsort(-(W_DENSE * s_dense[pool] + W_LEX * s_lex[pool] + W_MUL * s_mul))],
+            "dense": o_dense,
+            "sparse": o_lex,
+            "multi-vec": pool[np.argsort(-s_mul)],
+            "dense+sparse": hybrid[np.argsort(-(W_DENSE * s_dense[hybrid] + W_LEX * s_lex[hybrid]))],
+        }
+        return orders, ql
 
-    def search(self, text, mode="all", rel=None):
-        """Everything the page shows for one query, as JSON-ready data."""
+    def readings(self, text, ql):
+        """The query as each system reads it: BM25 words (stop word, known, unseen) and BGE-M3 sub-word pieces with weights."""
+        from nltk.corpus import stopwords
+        sw = set(stopwords.words("english"))
+        words = []
+        for w in re.findall(r"\w+|[^\w\s]+", text):
+            if not re.match(r"\w", w):
+                words.append({"w": w, "s": "punct"})
+                continue
+            stem = self.prep(w)
+            state = "stop" if (w.lower() in sw or not stem) else ("known" if stem[0] in self.bm25.idf else "unseen")
+            words.append({"w": w, "s": state})
+        tk = self.enc.tokenizer
+        pieces = tk.tokenize(text)
+        wmax = max([float(x) for x in ql.values()] or [1.0])
+        m3 = [{"p": p.replace("\u2581", ""), "new": p.startswith("\u2581"),
+               "w": round(float(ql.get(str(i), 0.0)) / wmax, 3)} for p, i in zip(pieces, tk.convert_tokens_to_ids(pieces))]
+        return words, m3
+
+    def search(self, text, rel=None):
+        """Everything the page shows for one query, every mode at once, as JSON-ready data."""
         t0 = time.time()
         text = text.strip()
         qid = by_text.get(text)
         rel = rel if rel is not None else qrels.get(qid, {})
         spring, o_bm, o_mini = self.spring(text)
-        order, heads, lex = self.m3_search(text, mode)
-        stems = self.prep(text)
+        m3_orders, ql = self.m3_search(text)
+        orders = {"rrf": np.array(spring), "bm25": o_bm, "minilm": o_mini} | m3_orders
+        stems = set(self.prep(text))
+        target = ids.index(next(iter(rel))) if rel else None
 
-        def doc(j, rank):
+        shown = {int(j) for o in orders.values() for j in o[:SHOW]} | ({target} if target is not None else set())
+        docs = {}
+        for j in shown:
             d = corpus[ids[j]]
-            words = set(re.findall(r"\w+", (d["title"] + " " + d["text"][:400]).lower()))
-            return {"id": ids[j], "rank": rank, "title": d["title"], "text": d["text"][:400],
-                    "relevant": ids[j] in rel, "match": sorted(w for w in words if self.prep(w) and self.prep(w)[0] in stems)}
-
-        labelled = []
-        for d in rel:
-            j = ids.index(d)
-            labelled.append({"id": d, "title": corpus[d]["title"], "ranks": {
-                "Spring (RRF)": rank_of(spring, j), "BM25": rank_of(o_bm, j), "MiniLM": rank_of(o_mini, j),
-                "M3 dense": rank_of(heads["dense"], j), "M3 sparse": rank_of(heads["sparse"], j),
-                "M3 multi-vec": rank_of(heads["multi-vec"], j), "M3 final": rank_of(order, j)}})
-        idf = self.bm25.idf
+            words = set(re.findall(r"\w+", (d["title"] + " " + d["text"][:500]).lower()))
+            docs[ids[j]] = {"title": d["title"], "text": d["text"][:500], "relevant": ids[j] in rel,
+                            "match": sorted(w for w in words if (st := self.prep(w)) and st[0] in stems)}
+        words, pieces = self.readings(text, ql)
         return {
-            "query": text, "qid": qid, "mode": mode, "ms": int(1000 * (time.time() - t0)),
-            "spring": [doc(j, i + 1) for i, j in enumerate(spring[:SHOW])],
-            "m3": [doc(j, i + 1) for i, j in enumerate(order[:SHOW])],
-            "labelled": labelled,
-            "bm25_terms": [{"t": s, "idf": round(float(idf[s]), 2) if s in idf else None} for s in dict.fromkeys(stems)],
-            "m3_terms": [{"t": t.replace("▁", "·"), "w": w} for t, w in lex[:12]],
+            "query": text, "qid": qid, "ms": int(1000 * (time.time() - t0)),
+            "target": ids[target] if target is not None else None,
+            "lists": {m: [ids[j] for j in o[:SHOW]] for m, o in orders.items()},
+            "ranks": {m: rank_of(o, target) for m, o in orders.items()} if target is not None else {},
+            "docs": docs, "bm25_words": words, "m3_pieces": pieces,
         }
 
     def show(self, text, rel=None):
-        r = self.search(text, "all", rel)
+        r = self.search(text, rel)
         print(f"\nQuery: {r['query']}   ({r['ms']} ms)")
-        print("BGE-M3 lexical weights:", ", ".join(f"{x['t']}={x['w']}" for x in r["m3_terms"][:8]))
         print(f"\n{'#':>2}  {'Spring: RRF (BM25 + MiniLM)':<58}  BGE-M3 (All)")
-        for a, b in zip(r["spring"][:5], r["m3"][:5]):
-            m = lambda d: "*" if d["relevant"] else " "
-            print(f"{a['rank']:>2} {m(a)}{a['title'][:56]:<57}  {m(b)}{b['title'][:56]}")
-        for d in r["labelled"]:
-            print(f"\n* {d['title'][:70]}\n  " + ", ".join(f"{k} {v or '-'}" for k, v in d["ranks"].items()))
+        for i, (a, b) in enumerate(zip(r["lists"]["rrf"][:5], r["lists"]["all"][:5]), 1):
+            m = lambda d: "*" if r["docs"][d]["relevant"] else " "
+            print(f"{i:>2} {m(a)}{r['docs'][a]['title'][:56]:<57}  {m(b)}{r['docs'][b]['title'][:56]}")
+        if r["target"]:
+            print(f"\n* {r['docs'][r['target']]['title'][:70]}\n  " + ", ".join(f"{k} {v or '-'}" for k, v in r["ranks"].items()))
 
 
 def parse(line):
@@ -208,8 +215,7 @@ def serve(demo, port=8765):
                 self.send(json.dumps(presets).encode(), "application/json")
             elif url.path == "/api/search":
                 text, rel = parse(args.get("q", "").strip())
-                mode = args.get("mode", "all") if args.get("mode") in MODES else "all"
-                self.send(json.dumps(demo.search(text, mode, rel)).encode(), "application/json")
+                self.send(json.dumps(demo.search(text, rel)).encode(), "application/json")
             else:
                 self.send_error(404)
 
