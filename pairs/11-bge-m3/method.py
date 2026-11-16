@@ -85,6 +85,11 @@ def quantize(weights):
     return {tok: int(round(float(x) * QUANT)) for tok, x in weights.items() if round(float(x) * QUANT) > 0}
 
 
+def to_query_string(weights):
+    """Pyserini encodes string queries by counting tokens: repeat each token id by its integer weight."""
+    return " ".join(" ".join([tok] * w) for tok, w in quantize(weights).items())
+
+
 def lucene_index(name, ids, D_lex):
     """Write the doc weights as a JsonVectorCollection and build a Lucene impact index (once per dataset)."""
     index_path = INDEX_DIR / f"{name}_lucene"
@@ -153,11 +158,11 @@ def search(name, mode="all", queries=None):
             cand = dense_hits[i][dense_hits[i] >= 0]
             s = Q_dense[i] @ D_dense[cand].T
         elif mode == "sparse":
-            hits = searcher.search(quantize(Q_lex[i]), k=sparse_k)
+            hits = searcher.search(to_query_string(Q_lex[i]), k=sparse_k)
             cand = np.array([pos[h.docid] for h in hits], dtype=int)
             s = np.array([h.score for h in hits], dtype=float)
         elif mode == "dense+sparse":
-            hits = searcher.search(quantize(Q_lex[i]), k=sparse_k)
+            hits = searcher.search(to_query_string(Q_lex[i]), k=sparse_k)
             sparse_cand = [pos[h.docid] for h in hits]
             cand = np.union1d(dense_hits[i][dense_hits[i] >= 0], sparse_cand).astype(int)
             s_dense = Q_dense[i] @ D_dense[cand].T
