@@ -8,3 +8,6 @@ sentence-transformers>=3.3
 FlagEmbedding
 transformers 
 sentencepiece
+faiss-cpu 
+pyserini
+install-jdk
