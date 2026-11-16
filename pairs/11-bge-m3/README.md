@@ -11,7 +11,7 @@ python testbed.py score pairs/11-bge-m3/runs_dense --method "BGE-M3 (Dense)" --p
 python pairs/11-bge-m3/translate_scifact.py --report   # share of correct translations in check_30.csv
 python pairs/11-bge-m3/crosslingual.py               # French vs English queries, each mode → results_crosslingual.json
 python pairs/11-bge-m3/tune_weights.py               # fusion weights tuned on SciFact train → results_weights.json
-python pairs/11-bge-m3/demo.py --build && python pairs/11-bge-m3/demo.py   # live demo, see demo.md
+python pairs/11-bge-m3/demo.py --build && python pairs/11-bge-m3/demo.py --web   # live demo on :8765, see demo.md
 ```
 
 ## Files
@@ -28,7 +28,7 @@ python pairs/11-bge-m3/demo.py --build && python pairs/11-bge-m3/demo.py   # liv
 | `tune_weights.py`, `results_weights.json` | mode All's weights tuned on the 809 SciFact training queries, applied once to test |
 | `error_analysis.md` | the queries French loses most on, per mode |
 | `analysis.py`, `analysis/` | per-query comparison with RRF: where each system clearly wins |
-| `demo.py`, `demo.md` | the live demo: spring RRF next to BGE-M3 on precomputed SciFact indexes, and the three queries |
+| `demo.py`, `demo_ui.html`, `demo.md` | the live demo: spring RRF next to BGE-M3 on precomputed SciFact indexes, and the three queries |
 
 ## Results (mode All)
 
