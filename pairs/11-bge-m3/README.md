@@ -11,6 +11,7 @@ python testbed.py score pairs/11-bge-m3/runs_dense --method "BGE-M3 (Dense)" --p
 python pairs/11-bge-m3/translate_scifact.py --report   # share of correct translations in check_30.csv
 python pairs/11-bge-m3/crosslingual.py               # French vs English queries, each mode → results_crosslingual.json
 python pairs/11-bge-m3/tune_weights.py               # fusion weights tuned on SciFact train → results_weights.json
+python pairs/11-bge-m3/demo.py --build && python pairs/11-bge-m3/demo.py --web   # live demo on :8765, see demo.md
 ```
 
 ## Files
@@ -26,6 +27,8 @@ python pairs/11-bge-m3/tune_weights.py               # fusion weights tuned on S
 | `crosslingual.py`, `results_crosslingual.json` | each mode with French and English SciFact queries, French − English with p and CI |
 | `tune_weights.py`, `results_weights.json` | mode All's weights tuned on the 809 SciFact training queries, applied once to test |
 | `error_analysis.md` | the queries French loses most on, per mode |
+| `analysis.py`, `analysis/` | per-query comparison with RRF: where each system clearly wins |
+| `demo.py`, `demo_ui.html`, `demo.md` | the live demo: spring RRF next to BGE-M3 on precomputed SciFact indexes, and the three queries |
 
 ## Results (mode All)
 
@@ -48,6 +51,8 @@ python pairs/11-bge-m3/tune_weights.py               # fusion weights tuned on S
 | Multi-vec | 0.683 | 0.634 | −0.049 [−0.072, −0.028] | <10⁻⁴ |
 | Dense+Sparse | 0.667 | 0.606 | −0.062 [−0.085, −0.040] | <10⁻⁷ |
 | All | 0.692 | 0.634 | −0.057 [−0.081, −0.035] | <10⁻⁵ |
+
+At the paper's own MKQA metric, Recall@100, French costs nothing except for Sparse: All 0.914 → 0.915 (p = 0.92), Sparse 0.894 → 0.751 (p < 10⁻⁸). Recall@20, the paper's auxiliary metric, for All: 0.850 → 0.820, −0.030 [−0.057, −0.004], p = 0.03. All three metrics are in `results_crosslingual.json`.
 
 Sparse needs shared tokens, so it loses most. On the 26 queries checked as correct the drops are small and not significant (All −0.008, p = 0.68), but those queries were picked for their acronyms, which match in both languages. See `error_analysis.md`.
 
