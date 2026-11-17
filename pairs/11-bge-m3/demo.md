@@ -9,3 +9,5 @@ The page shows the claim as each system reads it (BM25's words, with the ones no
 - **Wildcard**: taken from the room. Backup: "Le café réduit le risque de diabète de type 2." The spring pipeline drifts to unrelated abstracts (type 1 pregnancy outcomes, a protease inhibitor), BGE-M3 stays on type 2 diabetes prevention. No test label, so judge the lists by eye.
 
 The demo re-implements mode All with numpy on the precomputed vectors (dense top 200 by exact inner product, same as the Faiss flat index); its ranks for `#1221` and `#659` match `analysis/scifact_vs_rrf.md`.
+
+Fallback recording: to be added before the Wednesday 18:00 deadline.
