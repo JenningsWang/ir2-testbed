@@ -1,15 +1,22 @@
 """Live demo on SciFact: the spring pipeline (RRF of BM25 + MiniLM) next to BGE-M3, on precomputed indexes.
 
-Usage: python pairs/11-bge-m3/demo.py --build      → encodes the corpus once into runs/demo_index/ (about 2 min on a Mac)
+Usage: python pairs/11-bge-m3/demo.py --build      → encodes the corpus once into runs/demo_index/ (about 2 min on a Mac with MPS, ~15 min on a CPU)
        python pairs/11-bge-m3/demo.py --web        → the demo page on http://127.0.0.1:8765 (what we show in class)
        python pairs/11-bge-m3/demo.py              → same in the terminal: type a query, #<qid> for a test query, #<qid> fr in French
 """
 import json
+import os
 import pickle
 import re
+import subprocess
 import sys
 import time
 from pathlib import Path
+
+# Windows: testbed.load opens the corpus without an encoding (cp1252 there) and the console is not UTF-8 either,
+# so rerun the script in Python's UTF-8 mode before anything is read.
+if os.name == "nt" and not sys.flags.utf8_mode:
+    sys.exit(subprocess.run([sys.executable, "-X", "utf8", *sys.argv]).returncode)
 
 import numpy as np
 import torch
@@ -22,7 +29,7 @@ INDEX = HERE.parents[1] / "runs" / "demo_index"   # runs/ is git-ignored
 W_DENSE, W_LEX, W_MUL = 1.0, 0.3, 1.0             # the paper's weights, as in method.py
 N_CAND, N_HYBRID, MAX_LEN, SHOW = 200, 1000, 512, 10
 MODES = ["all", "dense", "sparse", "multi-vec", "dense+sparse"]
-DEVICE = "mps" if torch.backends.mps.is_available() else "cpu"
+DEVICE = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
 
 corpus, queries, qrels = testbed.load("scifact")
 ids = list(corpus)
@@ -39,7 +46,7 @@ PRESETS = [
 
 def bge():
     from FlagEmbedding import BGEM3FlagModel
-    return BGEM3FlagModel("BAAI/bge-m3", use_fp16=True, devices=DEVICE)
+    return BGEM3FlagModel("BAAI/bge-m3", use_fp16=DEVICE != "cpu", devices=DEVICE)   # fp16 is slow on a CPU
 
 
 def minilm():
