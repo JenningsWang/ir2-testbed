@@ -95,6 +95,9 @@ def main():
                   "test_ndcg10": round(float(ndcg_tuned.mean()), 4), "test_recall100": round(float(recall_tuned.mean()), 4)},
         "tuned_vs_paper": {"ndcg10": testbed.compare(ndcg_tuned, ndcg_paper), "recall100": testbed.compare(recall_tuned, recall_paper)},
     }
+    # identical Recall@100 lists give a NaN t-test, which strict JSON parsers reject
+    for c in results["tuned_vs_paper"].values():
+        c["p"] = None if np.isnan(c["p"]) else c["p"]
     json.dump(results, open(OUT, "w"), indent=1)
 
     print("train nDCG@10, rows w_lex, columns w_mul", W_MUL)

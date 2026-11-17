@@ -1,4 +1,4 @@
-"""Gather the results*.json files of this pair into one Markdown file (results.md).
+"""Gather the results*.json files of this pair into one Markdown file (results_all_methods.md).
 
 Usage (from anywhere): python pairs/11-bge-m3/results_to_md.py
 """

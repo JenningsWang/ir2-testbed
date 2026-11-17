@@ -233,7 +233,7 @@ if __name__ == "__main__":
             testbed.save_run(run, HERE / ("runs" + suffix(mode)) / f"{name}.json")
         print(name, "done", flush=True)
 
-    # same scoring as `python testbed.py score`, against RRF, the best spring baseline
+    # same scoring as `python testbed.py score`, against RRF, the spring pipeline
     for mode in modes:
         testbed.cmd_score(argparse.Namespace(run_dir=str(HERE / ("runs" + suffix(mode))), method=f"BGE-M3 ({label(mode)})",
                                              pair="11-bge-m3", against="rrf", out=str(HERE / f"results{suffix(mode)}.json")))
