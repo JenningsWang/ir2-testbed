@@ -109,45 +109,45 @@
    "recall100": 0.8936
   },
   "fr": {
-   "ndcg10": 0.4422,
-   "recall20": 0.6058,
-   "recall100": 0.7511,
+   "ndcg10": 0.4399,
+   "recall20": 0.6091,
+   "recall100": 0.7578,
    "ndcg10_vs_en": {
-    "delta": -0.1947,
-    "p": 7.708025490647692e-18,
+    "delta": -0.1971,
+    "p": 1.6722494579334585e-18,
     "ci95": [
-     -0.237,
-     -0.1532
+     -0.2393,
+     -0.1564
     ]
    },
    "recall20_vs_en": {
-    "delta": -0.1988,
-    "p": 6.111406694580044e-14,
+    "delta": -0.1955,
+    "p": 1.1122302946218268e-13,
     "ci95": [
-     -0.2493,
-     -0.1502
+     -0.2458,
+     -0.1468
     ]
    },
    "recall100_vs_en": {
-    "delta": -0.1424,
-    "p": 5.155467427428607e-09,
+    "delta": -0.1358,
+    "p": 4.963862191593622e-08,
     "ci95": [
-     -0.1897,
-     -0.0974
+     -0.1839,
+     -0.0897
     ]
    }
   },
   "fr_checked": {
    "n_queries": 26,
-   "ndcg10": 0.61,
+   "ndcg10": 0.6023,
    "recall20": 0.7564,
    "recall100": 0.9231,
    "ndcg10_vs_en": {
-    "delta": -0.0509,
-    "p": 0.3036795401930782,
+    "delta": -0.0586,
+    "p": 0.23280680963503725,
     "ci95": [
-     -0.1534,
-     0.0307
+     -0.1587,
+     0.0219
     ]
    },
    "recall20_vs_en": {
@@ -176,32 +176,32 @@
     "fr": "La taxation des boissons sucrées n'a eu aucun effet sur le taux d'incidence du diabète de type II en Inde."
    },
    {
-    "qid": "1319",
+    "qid": "532",
     "ndcg10_en": 1.0,
     "ndcg10_fr": 0.0,
-    "en": "Transplanted human glial cells can differentiate within the host animal.",
-    "fr": "Les cellules gliales humaines transplantées peuvent se différencier au sein de l'animal hôte."
+    "en": "Hyperfibrinogenemia decreases rates of femoropopliteal bypass thrombosis.",
+    "fr": "L' hyperfibrinogénémie réduit les taux de thrombose de contournement fémoropopliteal."
    },
    {
-    "qid": "439",
+    "qid": "525",
     "ndcg10_en": 1.0,
     "ndcg10_fr": 0.0,
-    "en": "Fz/PCP-dependent Pk localizes to the anterior membrane of neuroectoderm cells during zebrafish neuralation",
-    "fr": "Pk dépendant de Fz/PCP se localise à la membrane antérieure des cellules neuroectodermiques lors de la neuralation du poisson zèbre"
+    "en": "Histone demethylase recruitment and a transient decrease in histone methylation is necessary for ligand-dependent induction of transcription by nuclear receptors.",
+    "fr": "Le recrutement de l'histone démethylase et une diminution transitoire de la méthylation de l'histone sont nécessaires pour l'induction de la transcription par des récepteurs nucléaires ligandiques."
    },
    {
-    "qid": "960",
+    "qid": "163",
     "ndcg10_en": 1.0,
     "ndcg10_fr": 0.0,
-    "en": "Polymeal nutrition reduces cardiovascular mortality.",
-    "fr": "La nutrition en polymère réduit la mortalité cardiovasculaire."
+    "en": "Bariatric surgery has a positive impact on mental health.",
+    "fr": "La chirurgie bariatrique a un impact positif sur la santé mentale."
    },
    {
-    "qid": "1146",
+    "qid": "517",
     "ndcg10_en": 1.0,
     "ndcg10_fr": 0.0,
-    "en": "Teaching hospitals do not provide better care than non-teaching hospitals.",
-    "fr": "Les hôpitaux pédagogiques ne fournissent pas de meilleurs soins que les hôpitaux non pédagogiques."
+    "en": "High levels of copeptin decrease risk of diabetes.",
+    "fr": "Des niveaux élevés de copeptine réduisent le risque de diabète."
    }
   ]
  },

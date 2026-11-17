@@ -2,7 +2,7 @@
 
 From `results_crosslingual.json` (`worst`: the 5 queries that lose the most nDCG@10 per mode).
 
-**Sparse loses most (−0.195 nDCG@10, Recall@100 0.894 → 0.751).** Its score only counts tokens that appear in both the query and the document, so a correct French query shares almost nothing with an English abstract. Its five worst queries all fall from 1.0 to 0. Four are translated correctly, for example *Taxation of sugar-sweetened beverages…* → *La taxation des boissons sucrées…*. What survives is names and acronyms (Fz/PCP, TNF-α), which are the same in both languages.
+**Sparse loses most (−0.197 nDCG@10, Recall@100 0.894 → 0.758).** Its score only counts tokens that appear in both the query and the document, so a correct French query shares almost nothing with an English abstract. Its five worst queries all fall from 1.0 to 0. Four are translated correctly, for example *Taxation of sugar-sweetened beverages…* → *La taxation des boissons sucrées…*; the fifth, 532, turns *bypass* into *contournement*. What survives is names and acronyms (Fz/PCP, TNF-α), which are the same in both languages.
 
 **Dense and multi-vec lose about 0.05.** Their worst cases are mostly translation, not the model:
 - 1204, *quiescent* → *silencieux*, attached to the follicle (one of the 4 errors in `check_30.csv`)
