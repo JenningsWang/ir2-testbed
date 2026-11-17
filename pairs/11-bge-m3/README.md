@@ -1,61 +1,41 @@
 # M3-Embedding: Multi-Linguality, Multi-Functionality, Multi-Granularity Text Embeddings Through Self-Knowledge Distillation
 
-Pair: Oliver Wakeford, Mathis Lesgourgues. Method: BGE-M3, one encoder that outputs dense, sparse and multi-vector representations, evaluated head by head and fused with the paper's weighted sum (1·dense + 0.3·sparse + 1·multi-vec). How to run, in at most 10 lines (BGE-M3 has 568M parameters: run on a GPU, Onyxia or Colab):
+Pair: Oliver Wakeford, Mathis Lesgourgues. Method: BGE-M3 (`BAAI/bge-m3`, 568M parameters), one encoder with three heads: dense, sparse (lexical weights) and multi-vector (ColBERT). As in the paper (§4.1), dense search uses Faiss, sparse search a Lucene impact index, Multi-vec and All rerank the dense top 200, Dense+Sparse reranks the union of both top 1000, with weights 1 · dense + 0.3 · sparse + 1 · multi-vec. Compared with `rrf`, the spring pipeline (BM25 + MiniLM), as the paper menu asks; the comparison with `bge` (bge-small-en-v1.5, the closest dense baseline) is below and in the notebook. `method.py` encodes each corpus once (cached in `runs/cache/`) and computes all five modes from it. Everything ran on a Mac with PyTorch MPS: about 3 min of encoding, then 2 min for the rest. Run from the repo root:
 
 ```
-pip install -r pairs/11-bge-m3/requirements.txt  
-python pairs/11-bge-m3/method.py                    # mode All → runs/
-python pairs/11-bge-m3/method.py --mode dense       # or sparse, multi-vec, dense+sparse → runs_<mode>/
-python testbed.py score pairs/11-bge-m3/runs --method "BGE-M3 (All)" --pair 11-bge-m3 --against rrf
-python testbed.py score pairs/11-bge-m3/runs_dense --method "BGE-M3 (Dense)" --pair 11-bge-m3 --against rrf --out pairs/11-bge-m3/results_dense.json
-python pairs/11-bge-m3/translate_scifact.py --report   # share of correct translations in check_30.csv
-python pairs/11-bge-m3/crosslingual.py               # French vs English queries, each mode → results_crosslingual.json
-python pairs/11-bge-m3/tune_weights.py               # fusion weights tuned on SciFact train → results_weights.json
+pip install -r pairs/11-bge-m3/requirements.txt     # pyserini needs Java 21+
+python pairs/11-bge-m3/method.py                    # 3 datasets x 5 modes → runs*/, results*.json, results_per_query.json
+python testbed.py score pairs/11-bge-m3/runs --method "BGE-M3 (All)" --pair 11-bge-m3 --against rrf   # the shared row, = results.json
+python pairs/11-bge-m3/translate_scifact.py --report   # hand check of 30 translations (queries_fr.json is committed)
+python pairs/11-bge-m3/crosslingual.py               # French vs English SciFact queries, each mode → results_crosslingual.json
+python pairs/11-bge-m3/tune_weights.py               # fusion weights tuned on the SciFact train queries → results_weights.json
+python pairs/11-bge-m3/analysis.py && python pairs/11-bge-m3/results_to_md.py   # analysis/, results_all_methods.md
+jupyter nbconvert --to notebook --execute --inplace pairs/11-bge-m3/reproduce.ipynb
 python pairs/11-bge-m3/demo.py --build && python pairs/11-bge-m3/demo.py --web   # live demo on :8765, see demo.md
 ```
+
+## Results (mode All vs RRF, nDCG@10)
+
+| Dataset | BGE-M3 All | RRF | Δ [95% CI] | p | Recall@100 (RRF) |
+|---|:-:|:-:|:-:|:-:|:-:|
+| SciFact | 0.692 | 0.718 | −0.026 [−0.054, +0.003] | 0.078 | 0.914 (0.948) |
+| NFCorpus | 0.336 | 0.342 | −0.006 [−0.022, +0.010] | 0.47 | 0.289 (0.310) |
+| ArguAna | 0.527 | 0.549 | −0.022 [−0.036, −0.008] | 0.002 | 0.980 (0.985) |
+
+Against `bge` instead, All is −0.018 (p = 0.16) on SciFact, −0.004 (p = 0.65) on NFCorpus and −0.079 (p < 10⁻²²) on ArguAna, where bge-small (0.606) is the strongest baseline. The five modes on the three datasets: `results_all_methods.md`. The paper's comparison, read critically: `reproduce.ipynb`. In short, the paper's top of the ordering (All > Multi-vec > Dense+Sparse) holds on SciFact and NFCorpus but not on ArguAna, where Dense is best. Sparse is level with Dense on SciFact (0.637 vs 0.633), well below the paper's gap. All over Multi-vec is noise on SciFact and NFCorpus, so the fusion gain comes from the multi-vector head. With French queries, Recall@100 doesn't move for Dense, Multi-vec and All (All 0.914 → 0.915, p = 0.92), while Sparse drops from 0.894 to 0.758 (p < 10⁻⁷). Weights tuned on the 809 training queries give −0.002 (p = 0.53) against the paper's, so the paper's weights stay.
 
 ## Files
 
 | File | What it is |
 |---|---|
-| `method.py` | the five retrieval modes (`--mode`, default `all`) |
-| `results.json` | mode All, the row of the shared table |
-| `results_<mode>.json` | the other modes, kept out of the shared table |
-| `translate_scifact.py` | translates the 300 SciFact test queries with `facebook/nllb-200-distilled-600M` |
-| `queries_fr.json` | the French queries, same ids as the English ones |
-| `check_30.csv` | the 30 most technical queries checked by hand (1 = correct, 0 = wrong) |
-| `crosslingual.py`, `results_crosslingual.json` | each mode with French and English SciFact queries, French − English with p and CI |
-| `tune_weights.py`, `results_weights.json` | mode All's weights tuned on the 809 SciFact training queries, applied once to test |
-| `error_analysis.md` | the queries French loses most on, per mode |
-| `analysis.py`, `analysis/` | per-query comparison with RRF: where each system clearly wins |
-| `demo.py`, `demo_ui.html`, `demo.md` | the live demo: spring RRF next to BGE-M3 on precomputed SciFact indexes, and the three queries |
+| `method.py` | the five retrieval modes, scored with `testbed.cmd_score` |
+| `results.json`, `results_<mode>.json` | mode All (the shared row) and the other four modes |
+| `results_per_query.json` | per-query nDCG@10 and Recall@100 of each mode, for the paired tests in the notebook |
+| `reproduce.ipynb` | our numbers next to the paper's Tables 1 and 2, the ablation tests, the weights, the compute |
+| `translate_scifact.py`, `queries_fr.json`, `check_30.csv` | NLLB-200 (600M) translation of the 300 test queries; 30 checked by hand, 26 correct |
+| `crosslingual.py`, `results_crosslingual.json`, `error_analysis.md` | each mode with French and English queries, and the queries French loses most on |
+| `tune_weights.py`, `results_weights.json` | the weight grid on the training queries, applied once to test |
+| `analysis.py`, `analysis/` | per-query comparison with RRF on SciFact and NFCorpus: where each system clearly wins |
+| `demo.py`, `demo_ui.html`, `demo.md` | the live demo, spring RRF next to BGE-M3 on precomputed SciFact indexes, and the three queries |
 
-## Results (mode All)
-
-| Dataset | nDCG@10 | Recall@100 |
-|---|:-:|:-:|
-| SciFact | 0.692 | 0.914 |
-| NFCorpus | 0.337 | 0.289 |
-| ArguAna | 0.528 | 0.979 |
-
-## Translation check
-
-26 of the 30 checked queries are correct. The 4 errors change a technical term or the meaning: *penetrance* → « pénétration », *mottle* → « mouette », the acronym AMI → MMI, and *quiescent* attached to the follicle instead of the stem cells.
-
-## Cross-lingual (SciFact, French queries, English corpus)
-
-| Mode | nDCG@10 EN | nDCG@10 FR | Δ [95% CI] | p |
-|---|:-:|:-:|:-:|:-:|
-| Dense | 0.633 | 0.586 | −0.047 [−0.069, −0.028] | <10⁻⁴ |
-| Sparse | 0.637 | 0.442 | −0.195 [−0.237, −0.153] | <10⁻¹⁷ |
-| Multi-vec | 0.683 | 0.634 | −0.049 [−0.072, −0.028] | <10⁻⁴ |
-| Dense+Sparse | 0.667 | 0.606 | −0.062 [−0.085, −0.040] | <10⁻⁷ |
-| All | 0.692 | 0.634 | −0.057 [−0.081, −0.035] | <10⁻⁵ |
-
-At the paper's own MKQA metric, Recall@100, French costs nothing except for Sparse: All 0.914 → 0.915 (p = 0.92), Sparse 0.894 → 0.751 (p < 10⁻⁸). Recall@20, the paper's auxiliary metric, for All: 0.850 → 0.820, −0.030 [−0.057, −0.004], p = 0.03. All three metrics are in `results_crosslingual.json`.
-
-Sparse needs shared tokens, so it loses most. On the 26 queries checked as correct the drops are small and not significant (All −0.008, p = 0.68), but those queries were picked for their acronyms, which match in both languages. See `error_analysis.md`.
-
-## Tuned weights (SciFact)
-
-Grid over w_lex ∈ {0, 0.1, 0.2, 0.3, 0.5, 1} and w_mul ∈ {0, 0.5, 1, 1.5, 2}, w_dense = 1, on the training queries only. The grid is flat: every w_mul ≥ 0.5 is within 0.007 of the best. The best, (1, 0.1, 1.5), gives 0.689 nDCG@10 on test against 0.692 for the paper's (1, 0.3, 1): −0.002 [−0.009, +0.005], p = 0.53. The paper's weights stay the default.
+AI use: we used Claude Code as an assistant to write parts of the code, the notebook, the README and the slides. We ran and checked all results ourselves. Details in the report.

@@ -89,21 +89,6 @@ Lexical overlap = share of the query words (> 3 letters) found in the closest re
 
 ## RRF (BM25 + MiniLM) clearly better
 
-### Query 94: Δ nDCG@10 -1.00 (BGE-M3 (All) 0.00, RRF (BM25 + MiniLM) 1.00)
-
-> Albendazole is used to treat lymphatic filariasis.
-
-- Relevant documents: 1. First relevant at rank 28 (BGE-M3 (All)) vs 1 (RRF (BM25 + MiniLM))
-- Lexical overlap: 40% of the query words appear in the closest relevant document
-
-| Rank | BGE-M3 (All) | Rel. | RRF (BM25 + MiniLM) | Rel. |
-|:-:|---|:-:|---|:-:|
-| 1 | Emerging role of bisphosphonates in the clinic--antitumor activity an… |  | “Rapid-Impact Interventions”: How a Policy of Integrated Control for … | 1 |
-| 2 | Amylase, Lipase, and Acute Pancreatitis in People With Type 2 Diabete… |  | Reduction in skin grafting after the introduction of hydrofiber dress… |  |
-| 3 | Inflammatory monocyte/macrophage modulation by liposome-entrapped spi… |  | Combining indoor residual spraying and insecticide-treated nets for m… |  |
-| 4 | Interaction of cytosine arabinoside and lovastatin in human leukemia … |  | Oral ciclopirox olamine displays biological activity in a phase I stu… |  |
-| 5 | Optimal therapy for reduction of lipoprotein(a). |  | Efficacy of the 6-month thrice-weekly regimen in the treatment of new… |  |
-
 ### Query 659: Δ nDCG@10 -1.00 (BGE-M3 (All) 0.00, RRF (BM25 + MiniLM) 1.00)
 
 > Ivermectin is used to treat lymphatic filariasis.
@@ -118,6 +103,21 @@ Lexical overlap = share of the query words (> 3 letters) found in the closest re
 | 3 | Imiquimod 5% cream for the treatment of superficial basal cell carcin… |  | An IL-13 inhibitor blocks the development of hepatic fibrosis during … |  |
 | 4 | Oral fingolimod (FTY720) for relapsing multiple sclerosis. |  | Efficacy of the 6-month thrice-weekly regimen in the treatment of new… |  |
 | 5 | Interaction of cytosine arabinoside and lovastatin in human leukemia … |  | Resazurin microtiter assay plate: simple and inexpensive method for d… |  |
+
+### Query 94: Δ nDCG@10 -1.00 (BGE-M3 (All) 0.00, RRF (BM25 + MiniLM) 1.00)
+
+> Albendazole is used to treat lymphatic filariasis.
+
+- Relevant documents: 1. First relevant at rank 27 (BGE-M3 (All)) vs 1 (RRF (BM25 + MiniLM))
+- Lexical overlap: 40% of the query words appear in the closest relevant document
+
+| Rank | BGE-M3 (All) | Rel. | RRF (BM25 + MiniLM) | Rel. |
+|:-:|---|:-:|---|:-:|
+| 1 | Emerging role of bisphosphonates in the clinic--antitumor activity an… |  | “Rapid-Impact Interventions”: How a Policy of Integrated Control for … | 1 |
+| 2 | Amylase, Lipase, and Acute Pancreatitis in People With Type 2 Diabete… |  | Reduction in skin grafting after the introduction of hydrofiber dress… |  |
+| 3 | Inflammatory monocyte/macrophage modulation by liposome-entrapped spi… |  | Combining indoor residual spraying and insecticide-treated nets for m… |  |
+| 4 | Interaction of cytosine arabinoside and lovastatin in human leukemia … |  | Oral ciclopirox olamine displays biological activity in a phase I stu… |  |
+| 5 | Optimal therapy for reduction of lipoprotein(a). |  | Efficacy of the 6-month thrice-weekly regimen in the treatment of new… |  |
 
 ### Query 185: Δ nDCG@10 -0.71 (BGE-M3 (All) 0.29, RRF (BM25 + MiniLM) 1.00)
 
@@ -149,11 +149,11 @@ Lexical overlap = share of the query words (> 3 letters) found in the closest re
 | 4 | Antigen availability determines CD8⁺ T cell-dendritic cell interactio… |  | Thymic expression of the golli-myelin basic protein gene in the SJL/J… |  |
 | 5 | Frontrunners of T cell activation: Initial, localized Ca2+ signals me… |  | Functional analysis via standardized whole-blood stimulation systems … |  |
 
-### Query 1278: Δ nDCG@10 -0.67 (BGE-M3 (All) 0.33, RRF (BM25 + MiniLM) 1.00)
+### Query 1278: Δ nDCG@10 -0.68 (BGE-M3 (All) 0.32, RRF (BM25 + MiniLM) 1.00)
 
 > The treatment of cancer patients with co-IR blockade does not cause any adverse autoimmune events.
 
-- Relevant documents: 1. First relevant at rank 7 (BGE-M3 (All)) vs 1 (RRF (BM25 + MiniLM))
+- Relevant documents: 1. First relevant at rank 8 (BGE-M3 (All)) vs 1 (RRF (BM25 + MiniLM))
 - Lexical overlap: 30% of the query words appear in the closest relevant document
 
 | Rank | BGE-M3 (All) | Rel. | RRF (BM25 + MiniLM) | Rel. |

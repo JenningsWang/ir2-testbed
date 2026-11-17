@@ -39,23 +39,21 @@ def load_train():
     return queries, qrels
 
 
-def candidate_scores(queries, D_dense, D_lex, D_mul, vocab):
+def candidate_scores(Q, D, index):
     """The dense top-N_CAND of each query, with the three scores of each candidate, as in mode All."""
-    qids = list(queries)
-    Q_dense, Q_lex, Q_mul = method.encode([queries[q] for q in qids])
-    S_dense = Q_dense @ D_dense.T
-    S_lex = (method.to_sparse(Q_lex, vocab) @ D_lex.T).toarray()
-    scores = {}
-    for i, q in enumerate(qids):
-        cand = method.top(S_dense[i], method.N_CAND)
+    (Q_dense, Q_lex, Q_mul), (D_dense, D_lex, D_mul) = Q, D
+    _, hits = index.search(Q_dense, method.N_CAND)
+    scores = []
+    for i, cand in enumerate(hits):
+        s_lex = np.array([method.lex_score(Q_lex[i], D_lex[j]) for j in cand])
         s_mul = method.colbert_batch(Q_mul[i], [D_mul[j] for j in cand])
-        scores[q] = (cand, S_dense[i, cand], S_lex[i, cand], s_mul)
+        scores.append((cand, Q_dense[i] @ D_dense[cand].T, s_lex, s_mul))
     return scores
 
 
-def fuse(scores, ids, w_lex, w_mul):
+def fuse(scores, qids, ids, w_lex, w_mul):
     run = {}
-    for q, (cand, s_dense, s_lex, s_mul) in scores.items():
+    for q, (cand, s_dense, s_lex, s_mul) in zip(qids, scores):
         s = s_dense + w_lex * s_lex + w_mul * s_mul
         order = np.argsort(-s)[:testbed.K]
         run[q] = {ids[cand[k]]: float(s[k]) for k in order}
@@ -72,20 +70,21 @@ def train_ndcg(run, qrels):
 def main():
     corpus, test_queries, _ = testbed.load("scifact")
     ids = list(corpus)
-    vocab = len(method.model.tokenizer)
-    D_dense, D_lex, D_mul = method.encode(testbed.doc_texts(corpus))
-    D_lex = method.to_sparse(D_lex, vocab)
+    D = method.cached_encode("scifact", "docs", testbed.doc_texts(corpus))     # the encoding method.py made
+    index = method.faiss_index(D[0])
 
     # grid on the training queries only
     train_queries, train_qrels = load_train()
-    train = candidate_scores(train_queries, D_dense, D_lex, D_mul, vocab)
-    grid = {w: train_ndcg(fuse(train, ids, *w), train_qrels) for w in itertools.product(W_LEX, W_MUL)}
+    train_qids = list(train_queries)
+    train = candidate_scores(method.encode([train_queries[q] for q in train_qids]), D, index)
+    grid = {w: train_ndcg(fuse(train, train_qids, ids, *w), train_qrels) for w in itertools.product(W_LEX, W_MUL)}
     best = max(grid, key=grid.get)
 
     # the test queries are scored once, with the paper's weights and with the tuned ones
-    test = candidate_scores(test_queries, D_dense, D_lex, D_mul, vocab)
-    _, ndcg_paper, recall_paper = testbed.score_run(fuse(test, ids, *PAPER), "scifact")
-    _, ndcg_tuned, recall_tuned = testbed.score_run(fuse(test, ids, *best), "scifact")
+    test_qids = list(test_queries)
+    test = candidate_scores(method.cached_encode("scifact", "queries", list(test_queries.values())), D, index)
+    _, ndcg_paper, recall_paper = testbed.score_run(fuse(test, test_qids, ids, *PAPER), "scifact")
+    _, ndcg_tuned, recall_tuned = testbed.score_run(fuse(test, test_qids, ids, *best), "scifact")
 
     results = {
         "n_train_queries": len(train_queries),
@@ -96,6 +95,9 @@ def main():
                   "test_ndcg10": round(float(ndcg_tuned.mean()), 4), "test_recall100": round(float(recall_tuned.mean()), 4)},
         "tuned_vs_paper": {"ndcg10": testbed.compare(ndcg_tuned, ndcg_paper), "recall100": testbed.compare(recall_tuned, recall_paper)},
     }
+    # identical Recall@100 lists give a NaN t-test, which strict JSON parsers reject
+    for c in results["tuned_vs_paper"].values():
+        c["p"] = None if np.isnan(c["p"]) else c["p"]
     json.dump(results, open(OUT, "w"), indent=1)
 
     print("train nDCG@10, rows w_lex, columns w_mul", W_MUL)

@@ -19,13 +19,16 @@ N_WORST = 5
 MODES = ["dense", "sparse", "multi-vec", "dense+sparse", "all"]       # as method.MODES, without loading the model
 
 
-def get_run(mode, lang, queries):
-    # runs are saved, so scoring can be redone without encoding again
-    path = RUNS / f"{mode.replace('+', '_')}_{lang}.json"
-    if not path.exists():
+def get_runs(lang, queries):
+    """The five modes for one language. Runs are saved, so scoring can be redone without encoding again."""
+    paths = {mode: RUNS / f"{mode.replace('+', '_')}_{lang}.json" for mode in MODES}
+    if not all(path.exists() for path in paths.values()):
         import method                                   # loads BGE-M3, only when a run is missing
-        testbed.save_run(method.search("scifact", mode, queries), path)
-    return json.load(open(path))
+        # the corpus encoding comes from method.py's cache; English uses the cached test queries
+        runs = method.search("scifact", queries=None if lang == "en" else queries)
+        for mode, run in runs.items():
+            testbed.save_run(run, paths[mode])
+    return {mode: json.load(open(path)) for mode, path in paths.items()}
 
 
 def recall20(run, qids):
@@ -48,9 +51,10 @@ def main():
     queries_fr = json.load(open(HERE / "queries_fr.json", encoding="utf-8"))
     checked = {r["qid"] for r in csv.DictReader(open(HERE / "check_30.csv", encoding="utf-8")) if r["correct"] == "1"}
 
+    runs_en, runs_fr = get_runs("en", queries_en), get_runs("fr", queries_fr)
     results = {}
     for mode in MODES:
-        run_en, run_fr = get_run(mode, "en", queries_en), get_run(mode, "fr", queries_fr)
+        run_en, run_fr = runs_en[mode], runs_fr[mode]
         qids, ndcg_en, recall_en = testbed.score_run(run_en, "scifact")
         _, ndcg_fr, recall_fr = testbed.score_run(run_fr, "scifact")
         r20_en, r20_fr = recall20(run_en, qids), recall20(run_fr, qids)

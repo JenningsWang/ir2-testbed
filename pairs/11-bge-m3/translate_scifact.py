@@ -1,7 +1,7 @@
 """Translate the 300 SciFact test queries to French with NLLB-200 (600M), and pick 30 to check by hand.
 
-To access the translation report : python pairs/11-bge-m3/translate_scifact.py --report   → share of correct translations in the filled check_30.csv
-Ran to get the 30 most difficult queries: python pairs/11-bge-m3/translate_scifact.py            → queries_fr.json (300 queries) + check_30.csv (30 to check)
+Usage: python pairs/11-bge-m3/translate_scifact.py            → queries_fr.json (300 queries) + check_30.csv (30 to check)
+       python pairs/11-bge-m3/translate_scifact.py --report   → share of correct translations in the filled check_30.csv
 """
 import argparse
 import csv
@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE.parents[1]))         
+sys.path.insert(0, str(HERE.parents[1]))
 import testbed
 
 MODEL = "facebook/nllb-200-distilled-600M"
