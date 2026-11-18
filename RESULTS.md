@@ -14,6 +14,7 @@ Pair 00 is the instructor's worked example from the model presentation.
 | *RRF (BM25 + MiniLM)* | 0.718 | 0.948 | | | |
 | *BM25 top-100 + cross-encoder* | 0.688 | 0.918 | | | |
 | Beyond Abstracts (ModernBERT, both_random) ([00-beyond-abstracts](pairs/00-beyond-abstracts/)) | 0.717 | 0.982 | bge-small-en-v1.5 | +0.007 [-0.020, +0.034] | 0.626 |
+| gpl_BGE (eval_base) vs bge ([10_GPL](pairs/10_GPL/)) | 0.511 | 0.859 | bge-small-en-v1.5 | **-0.198 [-0.237, -0.160]** | < 0.001 |
 
 ## NFCorpus
 
@@ -25,6 +26,7 @@ Pair 00 is the instructor's worked example from the model presentation.
 | *RRF (BM25 + MiniLM)* | 0.342 | 0.310 | | | |
 | *BM25 top-100 + cross-encoder* | 0.347 | 0.246 | | | |
 | Beyond Abstracts (ModernBERT, both_random) ([00-beyond-abstracts](pairs/00-beyond-abstracts/)) | 0.313 | 0.324 | bge-small-en-v1.5 | **-0.027 [-0.047, -0.008]** | 0.006 |
+| gpl_BGE (eval_base) vs bge ([10_GPL](pairs/10_GPL/)) | 0.303 | 0.275 | bge-small-en-v1.5 | **-0.038 [-0.054, -0.021]** | < 0.001 |
 
 ## ArguAna
 
@@ -36,3 +38,4 @@ Pair 00 is the instructor's worked example from the model presentation.
 | *RRF (BM25 + MiniLM)* | 0.549 | 0.985 | | | |
 | *BM25 top-100 + cross-encoder* | 0.422 | 0.969 | | | |
 | Beyond Abstracts (ModernBERT, both_random) ([00-beyond-abstracts](pairs/00-beyond-abstracts/)) | 0.461 | 0.983 | bge-small-en-v1.5 | **-0.146 [-0.165, -0.126]** | < 0.001 |
+| gpl_BGE (eval_base) vs bge ([10_GPL](pairs/10_GPL/)) | 0.360 | 0.900 | bge-small-en-v1.5 | **-0.246 [-0.266, -0.225]** | < 0.001 |
