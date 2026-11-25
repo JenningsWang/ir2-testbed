@@ -5,7 +5,7 @@ the RankZephyr top-5 side by side (`*` = labelled relevant), each system's nDCG@
 wrote for its top window of 20 passages. The three queries below replay cached windows (no GPU, under a second).
 `--dataset scifact --interactive` takes queries typed by the room: BM25 over the corpus and `ce` on its top-100 (ready
 in about 10 s, then 1 s per query), then one RankZephyr window on the BM25 top-20 (the 7B model loads once in about
-40 s, then about 14 s per query on an RTX 4060 laptop; it needs the GPU, and no network once the models are cached).
+40 s, then about 14 s per query on an RTX 4060 laptop; it needs the GPU, and no network once the models are cached). We start it before the talk, so the index and the model are ready before the demo.
 
 - **Hero** (SciFact, query 1278): "The treatment of cancer patients with co-IR blockade does not cause any adverse
   autoimmune events." BM25 and `ce` both put *In vitro characterization of the anti-PD-1 antibody nivolumab* first and
