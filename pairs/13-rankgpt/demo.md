@@ -29,4 +29,4 @@ in about 10 s, then 1 s per query), then one RankZephyr window on the BM25 top-2
   infant death syndrome* is at BM25 rank 15. RankZephyr puts it first (nDCG@10 46.9), although the passage never says
   "crib" (crib death is another name for SIDS).
 
-Fallback recording: to be added here before the session on 27 November.
+Fallback recording (two minutes, the three queries above): https://drive.google.com/file/d/1_SHRiI6ghgVw7jIwnCq4ncJhER6KRtAo/view?usp=drive_link
